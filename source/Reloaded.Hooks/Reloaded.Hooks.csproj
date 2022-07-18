@@ -2,18 +2,19 @@
 
   <PropertyGroup>
     <TargetFrameworks>net7.0;net5.0;netstandard2.0</TargetFrameworks>
-    <Authors>Sewer56</Authors>
+    <Authors>Sewer56, goaaats</Authors>
     <LangVersion>preview</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageId>goaaats.Reloaded.Hooks</PackageId>
     <PackageLicenseUrl></PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/Reloaded-Project/Reloaded.Hooks</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/goatcorp/Reloaded.Hooks</PackageProjectUrl>
     <PackageIconUrl></PackageIconUrl>
-    <RepositoryUrl>https://github.com/Reloaded-Project/Reloaded.Hooks</RepositoryUrl>
+    <RepositoryUrl>https://github.com/goatcorp/Reloaded.Hooks</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Advanced native function hooks for x86, x64. Welcome to the next level!</Description>
-    <Version>4.2.0</Version>
+    <Version>4.2.0-goat</Version>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageIcon>Icon.png</PackageIcon>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

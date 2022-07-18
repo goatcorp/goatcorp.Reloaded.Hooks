@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Iced.Intel;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Helpers;
@@ -19,18 +20,26 @@ namespace Reloaded.Hooks.Tools
 {
     public static class Utilities
     {
+        [ThreadStatic]
+        private static Assembler.Assembler _assemblerBacking;
+        
         /// <summary>
         /// Assembler is costly to instantiate.
         /// We statically instantiate it here to avoid multiple instantiations.
         /// </summary>
-        public static Assembler.Assembler Assembler { get; }
+        public static Assembler.Assembler Assembler {
+            get
+            {
+                _assemblerBacking ??= new Assembler.Assembler();
+                return _assemblerBacking;
+            }
+        }
 
         private static object _lock = new object();
         private static MemoryBufferHelper _bufferHelper;
 
         static Utilities()
         {
-            Assembler     = new Assembler.Assembler();
             _bufferHelper = new MemoryBufferHelper(Process.GetCurrentProcess());
         }
 
