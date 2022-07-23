@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Iced.Intel;
+using Microsoft.Win32.SafeHandles;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Helpers;
 using Reloaded.Hooks.Definitions.Structs;
@@ -38,9 +39,38 @@ namespace Reloaded.Hooks.Tools
         private static object _lock = new object();
         private static MemoryBufferHelper _bufferHelper;
 
+        /// <summary>
+        /// Class representing an already held process handle.
+        /// </summary>
+        internal class ExistingProcess : Process
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ExistingProcess"/> class.
+            /// </summary>
+            /// <param name="handle">The existing held process handle.</param>
+            public ExistingProcess(IntPtr handle)
+            {
+                this.SetHandle(handle);
+            }
+
+            private void SetHandle(IntPtr handle)
+            {
+                var baseType = this.GetType().BaseType;
+                if (baseType == null)
+                    return;
+
+                var setProcessHandleMethod = baseType.GetMethod(
+                    "SetProcessHandle",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                setProcessHandleMethod?.Invoke(this, new object[] { new SafeProcessHandle(handle, true) });
+            }
+        }
+
+        public static Process GetCurrentProcess() => new ExistingProcess(new IntPtr(-1));
+        
         static Utilities()
         {
-            _bufferHelper = new MemoryBufferHelper(Process.GetCurrentProcess());
+            _bufferHelper = new MemoryBufferHelper(GetCurrentProcess());
         }
 
         private static string Architecture(bool is64bit) => is64bit ? "use64" : "use32";
