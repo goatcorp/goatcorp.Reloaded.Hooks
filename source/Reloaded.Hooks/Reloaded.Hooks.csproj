@@ -14,7 +14,7 @@
     <RepositoryType>git</RepositoryType>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Advanced native function hooks for x86, x64. Welcome to the next level!</Description>
-    <Version>4.2.0-goat3</Version>
+    <Version>4.2.0-goat.4</Version>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageIcon>Icon.png</PackageIcon>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -29,7 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="Iced" Version="1.17.0" />
-    <PackageReference Include="goaaats.Reloaded.Assembler" Version="1.0.14-goat1">
+    <PackageReference Include="goaaats.Reloaded.Assembler" Version="1.0.14-goat.2">
       <IncludeAssets>All</IncludeAssets>
       <PrivateAssets>None</PrivateAssets>
     </PackageReference>
