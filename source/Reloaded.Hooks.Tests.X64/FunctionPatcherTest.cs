@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Reloaded.Hooks.Internal;
 using Reloaded.Hooks.Internal.Testing;
@@ -31,7 +32,7 @@ namespace Reloaded.Hooks.Tests.X64
             _dummyFunctions = new DummyFunctions();
             _returnFive = ReloadedHooks.Instance.CreateWrapper<DummyFunctions.ReturnNumberDelegate>((long) _dummyFunctions.ReturnFive, out _);
             _returnSix = ReloadedHooks.Instance.CreateWrapper<DummyFunctions.ReturnNumberDelegate>((long)_dummyFunctions.ReturnSix, out _);
-            _assembler = new Assembler.Assembler();
+            _assembler = new Assembler.Assembler(new DirectoryInfo(Environment.CurrentDirectory));
 
             BuildRelativeJmp();
             BuildPushReturn();

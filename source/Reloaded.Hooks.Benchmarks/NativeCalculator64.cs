@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 
 namespace Reloaded.Hooks.Benchmarks
 {
     public class NativeCalculator64 : NativeCalculator, IDisposable
     {
         // Used for cleaning up function later.
-        private Assembler.Assembler _assembler = new Assembler.Assembler();
+        private Assembler.Assembler _assembler = new Assembler.Assembler(new DirectoryInfo(Environment.CurrentDirectory));
         private Memory.Sources.Memory _memory  = new Memory.Sources.Memory();
 
         public NativeCalculator64()

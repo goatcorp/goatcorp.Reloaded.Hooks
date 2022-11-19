@@ -31,7 +31,7 @@ namespace Reloaded.Hooks.Tools
         public static Assembler.Assembler Assembler {
             get
             {
-                _assemblerBacking ??= new Assembler.Assembler();
+                _assemblerBacking ??= new Assembler.Assembler(FasmBasePath);
                 return _assemblerBacking;
             }
         }
@@ -66,6 +66,8 @@ namespace Reloaded.Hooks.Tools
             }
         }
 
+        public static DirectoryInfo? FasmBasePath { get; set; } = null;
+        
         public static Process GetCurrentProcess() => new ExistingProcess(new IntPtr(-1));
         
         static Utilities()

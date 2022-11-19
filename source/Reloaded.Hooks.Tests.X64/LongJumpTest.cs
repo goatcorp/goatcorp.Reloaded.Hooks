@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Reloaded.Hooks.Definitions.Helpers;
 using Reloaded.Hooks.Definitions.X64;
 using Reloaded.Hooks.Tests.Shared;
@@ -26,7 +27,7 @@ public class LongJumpTest
     [Fact]
     public void LongRelativeJump()
     {
-        using var assembler = new Assembler.Assembler();
+        using var assembler = new Assembler.Assembler(new DirectoryInfo(Environment.CurrentDirectory));
         const int expectedResult = 42069;
         
         string[] customFunction = new string[]
