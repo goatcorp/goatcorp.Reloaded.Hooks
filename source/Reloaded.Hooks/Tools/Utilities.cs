@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 #if NET5_0_OR_GREATER
@@ -21,20 +21,13 @@ namespace Reloaded.Hooks.Tools
 {
     public static class Utilities
     {
-        [ThreadStatic]
-        private static Assembler.Assembler _assemblerBacking;
-        
+        private static Lazy<Assembler.Assembler> _assemblerBacking = new(() => new(FasmBasePath), true);
+
         /// <summary>
         /// Assembler is costly to instantiate.
         /// We statically instantiate it here to avoid multiple instantiations.
         /// </summary>
-        public static Assembler.Assembler Assembler {
-            get
-            {
-                _assemblerBacking ??= new Assembler.Assembler(FasmBasePath);
-                return _assemblerBacking;
-            }
-        }
+        public static Assembler.Assembler Assembler => _assemblerBacking.Value;
 
         private static object _lock = new object();
         private static MemoryBufferHelper _bufferHelper;
