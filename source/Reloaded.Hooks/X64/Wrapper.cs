@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions.Helpers;
 using Reloaded.Hooks.Definitions.X64;
-using Reloaded.Hooks.Internal;
 using Reloaded.Hooks.Tools;
-
-using Reloaded.Hooks.Definitions.Structs;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace Reloaded.Hooks.X64
 {
@@ -160,7 +157,7 @@ namespace Reloaded.Hooks.X64
                     assemblyCode.Add($"mov {toConvention.ReturnRegister}, {fromConvention.ReturnRegister}");
 
                 // Callee Restore Registers
-                foreach (var register in toConvention.CalleeSavedRegisters.Reverse())
+                foreach (var register in toConvention.CalleeSavedRegisters.AsEnumerable().Reverse())
                     assemblyCode.Add($"pop {register}");
 
                 assemblyCode.Add("pop rbp");

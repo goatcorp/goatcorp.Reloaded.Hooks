@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFrameworks>net7.0;net5.0;netstandard2.0</TargetFrameworks>
-    <Authors>Sewer56, goaaats</Authors>
+    <Authors>Sewer56, goatcorp Contributors</Authors>
     <LangVersion>preview</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageId>goaaats.Reloaded.Hooks</PackageId>
+    <PackageId>goatcorp.Reloaded.Hooks</PackageId>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/goatcorp/Reloaded.Hooks</PackageProjectUrl>
     <PackageIconUrl></PackageIconUrl>
@@ -14,7 +14,7 @@
     <RepositoryType>git</RepositoryType>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Advanced native function hooks for x86, x64. Welcome to the next level!</Description>
-    <Version>4.2.0-goat.4</Version>
+    <Version>4.2.0-goatcorp1</Version>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageIcon>Icon.png</PackageIcon>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -29,11 +29,11 @@
 
   <ItemGroup>
     <PackageReference Include="Iced" Version="1.17.0" />
-    <PackageReference Include="goaaats.Reloaded.Assembler" Version="1.0.14-goat.2">
+    <PackageReference Include="goatcorp.Reloaded.Assembler" Version="1.0.14-goatcorp3">
       <IncludeAssets>All</IncludeAssets>
       <PrivateAssets>None</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Reloaded.Memory.Buffers" Version="2.0.0" />
+    <PackageReference Include="goatcorp.Reloaded.Memory.Buffers" Version="2.0.0-goatcorp6" />
   </ItemGroup>
 
   <ItemGroup>
