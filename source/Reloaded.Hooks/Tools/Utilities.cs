@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 #if NET5_0_OR_GREATER
@@ -21,23 +22,37 @@ namespace Reloaded.Hooks.Tools
 {
     public static class Utilities
     {
-        [ThreadStatic]
-        private static Assembler.Assembler _assemblerBacking;
-        
+        private static readonly ConcurrentBag<Assembler.Assembler> _assemblerPool = new();
+
         /// <summary>
         /// Assembler is costly to instantiate.
-        /// We statically instantiate it here to avoid multiple instantiations.
+        /// We pool it to limit multiple instantiations.
         /// </summary>
-        public static Assembler.Assembler Assembler {
-            get
-            {
-                _assemblerBacking ??= new Assembler.Assembler(FasmBasePath ?? new DirectoryInfo(Directory.GetCurrentDirectory()));
-                return _assemblerBacking;
-            }
+        /// <remarks>Use the returned struct with a using declaration.</remarks>
+        public static AssemblerLease RentAssembler()
+        {
+            if (_assemblerPool.TryTake(out var assembler))
+                return new(assembler);
+
+            return new(new(FasmBasePath ?? new DirectoryInfo(Directory.GetCurrentDirectory())));
+        }
+
+        public static byte[] Assemble(string[] asmCode)
+        {
+            using var asmLease = RentAssembler();
+            return asmLease.Assembler.Assemble(asmCode);
         }
 
         private static object _lock = new object();
         private static MemoryBufferHelper _bufferHelper;
+
+        public readonly struct AssemblerLease(Assembler.Assembler assembler) : IDisposable
+        {
+            public readonly Assembler.Assembler Assembler = assembler;
+
+            public void Dispose()
+                => _assemblerPool.Add(Assembler);
+        }
 
         /// <summary>
         /// Class representing an already held process handle.
@@ -67,9 +82,9 @@ namespace Reloaded.Hooks.Tools
         }
 
         public static DirectoryInfo? FasmBasePath { get; set; } = null;
-        
+
         public static Process GetCurrentProcess() => new ExistingProcess(new IntPtr(-1));
-        
+
         static Utilities()
         {
             _bufferHelper = new MemoryBufferHelper(GetCurrentProcess());
@@ -95,7 +110,7 @@ namespace Reloaded.Hooks.Tools
         /// </summary>
         /// <param name="target">The target memory location to jump to.</param>
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
-        public static byte[] AssembleAbsoluteJump(nuint target, bool is64bit) => Assembler.Assemble(new[]
+        public static byte[] AssembleAbsoluteJump(nuint target, bool is64bit) => Assemble(new[]
         {
             Architecture(is64bit),
             GetAbsoluteJumpMnemonics(target, is64bit)
@@ -106,7 +121,7 @@ namespace Reloaded.Hooks.Tools
         /// </summary>
         /// <param name="target">The target memory location to jump to.</param>
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
-        public static byte[] AssemblePushReturn(nuint target, bool is64bit) => Assembler.Assemble(new[]
+        public static byte[] AssemblePushReturn(nuint target, bool is64bit) => Assemble(new[]
         {
             Architecture(is64bit),
             GetPushReturnMnemonics(target, is64bit)
@@ -117,7 +132,7 @@ namespace Reloaded.Hooks.Tools
         /// </summary>
         /// <param name="relativeJumpOffset">Offset relative to EIP/RIP to jump to.</param>
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
-        public static byte[] AssembleRelativeJump(IntPtr relativeJumpOffset, bool is64bit) => Assembler.Assemble(new[]
+        public static byte[] AssembleRelativeJump(IntPtr relativeJumpOffset, bool is64bit) => Assemble(new[]
         {
             Architecture(is64bit),
             GetRelativeJumpMnemonics(relativeJumpOffset, is64bit)
@@ -146,7 +161,7 @@ namespace Reloaded.Hooks.Tools
             isProxied = Math.Abs(offset) > Int32.MaxValue;
             if (!isProxied)
             {
-                return Assembler.Assemble(new[]
+                return Assemble(new[]
                 {
                     Architecture(is64bit),
                     SetAddress(currentAddress),
@@ -169,7 +184,7 @@ namespace Reloaded.Hooks.Tools
             var minMax = GetRelativeJumpMinMax(currentAddress);
             var buffer  = FindOrCreateBufferInRange(16, minMax.min, minMax.max); // No code alignment as this is edge case.
             var absoluteJumpAddress = buffer.Add(AssembleAbsoluteJump(targetAddress, is64bit));
-            return Assembler.Assemble(new[]
+            return Assemble(new[]
             {
                 Architecture(is64bit),
                 SetAddress(currentAddress),

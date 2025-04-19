@@ -46,7 +46,7 @@ namespace Reloaded.Hooks
         /// <param name="behaviour">Defines what should be done with the original code that was replaced with the JMP instruction.</param>
         /// <param name="hookLength">Optional explicit length of hook. Use only in rare cases where auto-length check overflows a jmp/call opcode.</param>
         public AsmHook(string[] asmCode, nuint functionAddress, AsmHookBehaviour behaviour = AsmHookBehaviour.ExecuteFirst, int hookLength = -1) 
-            : this(Utilities.Assembler.Assemble(asmCode), functionAddress, new AsmHookOptions() { Behaviour = behaviour, hookLength = hookLength })
+            : this(Utilities.Assemble(asmCode), functionAddress, new AsmHookOptions() { Behaviour = behaviour, hookLength = hookLength })
         { }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Reloaded.Hooks
         /// </param>
         /// <param name="functionAddress">The address of the function or mid-function to hook.</param>
         /// <param name="options">The options used for creating the assembly hook.</param>
-        public AsmHook(string[] asmCode, nuint functionAddress, AsmHookOptions options = default) : this(Utilities.Assembler.Assemble(asmCode), functionAddress, options)
+        public AsmHook(string[] asmCode, nuint functionAddress, AsmHookOptions options = default) : this(Utilities.Assemble(asmCode), functionAddress, options)
         { }
 
         /// <summary>

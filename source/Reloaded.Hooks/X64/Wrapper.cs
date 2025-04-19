@@ -96,6 +96,7 @@ namespace Reloaded.Hooks.X64
             // If you need more than that, then... I don't know what you're doing with your life.
             // Please do a pull request though and we can stick some code to predict the size.
             const int MaxFunctionSize = 384;
+            using var asmLease = Utilities.RentAssembler();
             var minMax = Utilities.GetRelativeJumpMinMax(functionAddress, Int32.MaxValue - MaxFunctionSize);
             var buffer = Utilities.FindOrCreateBufferInRange(MaxFunctionSize, minMax.min, minMax.max);
             int numberOfParameters = Utilities.GetNumberofParametersWithoutFloats<TFunction>();
@@ -164,7 +165,7 @@ namespace Reloaded.Hooks.X64
                 assemblyCode.Add("ret");
 
                 // Write function to buffer and return pointer.
-                return buffer.Add(Utilities.Assembler.Assemble(assemblyCode.ToArray()), 1);
+                return buffer.Add(asmLease.Assembler.Assemble(assemblyCode.ToArray()), 1);
             });
         }
 

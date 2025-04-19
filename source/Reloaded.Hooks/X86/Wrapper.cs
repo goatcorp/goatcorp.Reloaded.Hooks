@@ -101,6 +101,7 @@ namespace Reloaded.Hooks.X86
             // If you need more than that, then... I don't know what you're doing with your life.
             // Please do a pull request though and we can stick some code to predict the size.
             const int MaxFunctionSize = 256;
+            using var asmLease = Utilities.RentAssembler();
             var minMax = Utilities.GetRelativeJumpMinMax(functionAddress, Int32.MaxValue - MaxFunctionSize);
             var buffer = Utilities.FindOrCreateBufferInRange(MaxFunctionSize, minMax.min, minMax.max);
             var numberOfParameters = Utilities.GetNumberofParameters<TFunction>();
@@ -157,7 +158,7 @@ namespace Reloaded.Hooks.X86
                 assemblyCode.Add($"ret {toStackParamBytesTotal}"); // FASM optimizes `ret 0` as `ret`
 
                 // Write function to buffer and return pointer.
-                return buffer.Add(Utilities.Assembler.Assemble(assemblyCode.ToArray()), 1);
+                return buffer.Add(asmLease.Assembler.Assemble(assemblyCode.ToArray()), 1);
             });
         }
 
