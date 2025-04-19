@@ -457,7 +457,7 @@ namespace Reloaded.Hooks.Internal
             if (_modules != null)
                 return _modules;
 
-            var modules = Process.GetCurrentProcess().Modules;
+            var modules = Utilities.GetCurrentProcess().Modules;
             _modules = new ProcessModule[modules.Count];
             modules.CopyTo(_modules, 0);
             return _modules;

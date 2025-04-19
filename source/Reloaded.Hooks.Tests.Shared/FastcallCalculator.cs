@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
 using Reloaded.Hooks.Definitions.Structs;
@@ -49,7 +50,7 @@ namespace Reloaded.Hooks.Tests.Shared
         public nuint VTable   { get; private set; }
 
         // Used for cleaning up function later.
-        private Assembler.Assembler _assembler = new Assembler.Assembler();
+        private Assembler.Assembler _assembler = new Assembler.Assembler(new DirectoryInfo(Environment.CurrentDirectory));
         private Memory.Sources.Memory _memory  = new Memory.Sources.Memory();
 
         /* For testing VTable */

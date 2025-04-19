@@ -14,7 +14,7 @@ namespace Reloaded.Hooks.Internal
     /// </summary>
     public class IcedPatcher
     {
-        private static MemoryBufferHelper _helper = new MemoryBufferHelper(Process.GetCurrentProcess());
+        private static MemoryBufferHelper _helper = new MemoryBufferHelper(Utilities.GetCurrentProcess());
 
         // In
         private int _bitness;

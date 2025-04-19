@@ -7,7 +7,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Iced.Intel;
+using Microsoft.Win32.SafeHandles;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Helpers;
 using Reloaded.Hooks.Definitions.Structs;
@@ -19,19 +21,58 @@ namespace Reloaded.Hooks.Tools
 {
     public static class Utilities
     {
+        [ThreadStatic]
+        private static Assembler.Assembler _assemblerBacking;
+        
         /// <summary>
         /// Assembler is costly to instantiate.
         /// We statically instantiate it here to avoid multiple instantiations.
         /// </summary>
-        public static Assembler.Assembler Assembler { get; }
+        public static Assembler.Assembler Assembler {
+            get
+            {
+                _assemblerBacking ??= new Assembler.Assembler(FasmBasePath);
+                return _assemblerBacking;
+            }
+        }
 
         private static object _lock = new object();
         private static MemoryBufferHelper _bufferHelper;
 
+        /// <summary>
+        /// Class representing an already held process handle.
+        /// </summary>
+        internal class ExistingProcess : Process
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ExistingProcess"/> class.
+            /// </summary>
+            /// <param name="handle">The existing held process handle.</param>
+            public ExistingProcess(IntPtr handle)
+            {
+                this.SetHandle(handle);
+            }
+
+            private void SetHandle(IntPtr handle)
+            {
+                var baseType = this.GetType().BaseType;
+                if (baseType == null)
+                    return;
+
+                var setProcessHandleMethod = baseType.GetMethod(
+                    "SetProcessHandle",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                setProcessHandleMethod?.Invoke(this, new object[] { new SafeProcessHandle(handle, true) });
+            }
+        }
+
+        public static DirectoryInfo? FasmBasePath { get; set; } = null;
+        
+        public static Process GetCurrentProcess() => new ExistingProcess(new IntPtr(-1));
+        
         static Utilities()
         {
-            Assembler     = new Assembler.Assembler();
-            _bufferHelper = new MemoryBufferHelper(Process.GetCurrentProcess());
+            _bufferHelper = new MemoryBufferHelper(GetCurrentProcess());
         }
 
         private static string Architecture(bool is64bit) => is64bit ? "use64" : "use32";

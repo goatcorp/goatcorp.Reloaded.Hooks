@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace Reloaded.Hooks.Tests.X64
     /// </summary>
     public class CSharpFromAssembly
     {
-        private Assembler.Assembler _assembler  = new Assembler.Assembler();
+        private Assembler.Assembler _assembler  = new Assembler.Assembler(new DirectoryInfo(Environment.CurrentDirectory));
         private Memory.Sources.Memory _memory   = new Memory.Sources.Memory();
 
         private Function<ManagedCalculator.AddFunction>       _addFunction;

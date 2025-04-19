@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions.X64;
@@ -23,7 +24,7 @@ namespace Reloaded.Hooks.Tests.Shared
         public nuint ReturnSix  { get; private set; }
 
         // Used for cleaning up function later.
-        private Assembler.Assembler _assembler = new Assembler.Assembler();
+        private Assembler.Assembler _assembler = new Assembler.Assembler(new DirectoryInfo(Environment.CurrentDirectory));
         
         public unsafe DummyFunctions()
         {
