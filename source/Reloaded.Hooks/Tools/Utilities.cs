@@ -31,7 +31,7 @@ namespace Reloaded.Hooks.Tools
         public static Assembler.Assembler Assembler {
             get
             {
-                _assemblerBacking ??= new Assembler.Assembler(FasmBasePath);
+                _assemblerBacking ??= new Assembler.Assembler(FasmBasePath ?? new DirectoryInfo(Directory.GetCurrentDirectory()));
                 return _assemblerBacking;
             }
         }
