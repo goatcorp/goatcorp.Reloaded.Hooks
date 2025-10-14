@@ -43,7 +43,6 @@ namespace Reloaded.Hooks.Tools
             return asmLease.Assembler.Assemble(asmCode);
         }
 
-        private static object _lock = new object();
         private static MemoryBufferHelper _bufferHelper;
 
         public readonly struct AssemblerLease(Assembler.Assembler assembler) : IDisposable
