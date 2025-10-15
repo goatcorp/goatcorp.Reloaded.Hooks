@@ -7,6 +7,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageId>goatcorp.Reloaded.Hooks</PackageId>
+    <AssemblyName>goatcorp.Reloaded.Hooks</AssemblyName>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/goatcorp/Reloaded.Hooks</PackageProjectUrl>
     <PackageIconUrl></PackageIconUrl>
@@ -14,7 +15,7 @@
     <RepositoryType>git</RepositoryType>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Advanced native function hooks for x86, x64. Welcome to the next level!</Description>
-    <Version>4.2.0-goatcorp6</Version>
+    <Version>4.2.0-goatcorp7</Version>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageIcon>Icon.png</PackageIcon>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -29,11 +30,11 @@
 
   <ItemGroup>
     <PackageReference Include="Iced" Version="1.17.0" />
-    <PackageReference Include="goatcorp.Reloaded.Assembler" Version="1.0.14-goatcorp4">
+    <PackageReference Include="goatcorp.Reloaded.Assembler" Version="1.0.14-goatcorp5">
       <IncludeAssets>All</IncludeAssets>
       <PrivateAssets>None</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="goatcorp.Reloaded.Memory.Buffers" Version="2.0.0-goatcorp7" />
+    <PackageReference Include="goatcorp.Reloaded.Memory.Buffers" Version="2.0.0-goatcorp8" />
   </ItemGroup>
 
   <ItemGroup>
