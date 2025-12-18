@@ -1,4 +1,7 @@
+﻿using Iced.Intel;
+using static Iced.Intel.AssemblerRegisters;
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -96,7 +99,7 @@ namespace Reloaded.Hooks.X64
             // If you need more than that, then... I don't know what you're doing with your life.
             // Please do a pull request though and we can stick some code to predict the size.
             const int MaxFunctionSize = 384;
-            using var asmLease = Utilities.RentAssembler();
+            var assembler = new Iced.Intel.Assembler(bitness: 64);
             var minMax = Utilities.GetRelativeJumpMinMax(functionAddress, Int32.MaxValue - MaxFunctionSize);
             var buffer = Utilities.FindOrCreateBufferInRange(MaxFunctionSize, minMax.min, minMax.max);
             int numberOfParameters = Utilities.GetNumberofParametersWithoutFloats<TFunction>();
@@ -107,20 +110,13 @@ namespace Reloaded.Hooks.X64
                 buffer.SetAlignment(16);
                 var codeAddress = buffer.Properties.WritePointer;
 
-                // Retrieve number of parameters.
-                List<string> assemblyCode = new List<string>
-                {
-                    "use64", 
-                    $"org {codeAddress}"
-                };
-
                 // On enter, stack is misaligned by 8.
                 // Callee Backup Registers
                 // Backup Stack Frame
-                assemblyCode.Add("push rbp");       // Backup old call frame
-                assemblyCode.Add("mov rbp, rsp");   // Setup new call frame
+                assembler.push(rbp);       // Backup old call frame
+                assembler.mov(rbp, rsp);   // Setup new call frame
                 foreach (var register in toConvention.CalleeSavedRegisters)
-                    assemblyCode.Add($"push {register}");
+                    assembler.push(GetRegister64(register));
 
                 // Even my mind gets a bit confused. So here is a reminder:
                 // fromConvention is the convention that gets called.
@@ -136,43 +132,44 @@ namespace Reloaded.Hooks.X64
                 // stackBytesTotal % 16 represent the amount of bytes away from alignment after pushing parameters up the stack.
                 // Setup stack alignment.
                 if (stackMisalignment != 0)
-                    assemblyCode.Add($"sub rsp, {stackMisalignment}");
+                    assembler.sub(rsp, stackMisalignment);
 
                 // Setup parameters for target.
                 if (numberOfParameters > 0)
-                    assemblyCode.AddRange(AssembleFunctionParameters(numberOfParameters, ref fromConvention, ref toConvention));
+                    AssembleFunctionParameters(assembler, numberOfParameters, ref fromConvention, ref toConvention);
 
                 // Make shadow space if target requires it.
                 if (fromConvention.ShadowSpace)
-                    assemblyCode.Add($"sub rsp, {shadowSpace}");
+                    assembler.sub(rsp, shadowSpace);
 
                 // Call target.
-                assemblyCode.Add($"call {functionAddress}");
+                assembler.call(functionAddress);
 
                 // Restore the stack pointer after function call.
                 if (stackParamBytesTotal + shadowSpace + stackMisalignment != 0)
-                    assemblyCode.Add($"add rsp, {stackParamBytesTotal + shadowSpace + stackMisalignment}");
+                    assembler.add(rsp, stackParamBytesTotal + shadowSpace + stackMisalignment);
 
                 // Marshal return register back from target to source.
                 if (fromConvention.ReturnRegister != toConvention.ReturnRegister)
-                    assemblyCode.Add($"mov {toConvention.ReturnRegister}, {fromConvention.ReturnRegister}");
+                    assembler.mov(GetRegister64(toConvention.ReturnRegister), GetRegister64(fromConvention.ReturnRegister));
 
                 // Callee Restore Registers
                 foreach (var register in toConvention.CalleeSavedRegisters.AsEnumerable().Reverse())
-                    assemblyCode.Add($"pop {register}");
+                    assembler.pop(GetRegister64(register));
 
-                assemblyCode.Add("pop rbp");
-                assemblyCode.Add("ret");
+                assembler.pop(rbp);
+                assembler.ret();
 
                 // Write function to buffer and return pointer.
-                return buffer.Add(asmLease.Assembler.Assemble(assemblyCode.ToArray()), 1);
+                using var stream = new MemoryStream();
+                var result = assembler.Assemble(new StreamCodeWriter(stream), codeAddress);
+
+                return buffer.Add(stream.ToArray(), 1);
             });
         }
 
-        private static string[] AssembleFunctionParameters(int parameterCount, ref IFunctionAttribute fromConvention, ref IFunctionAttribute toConvention)
+        private static void AssembleFunctionParameters(Iced.Intel.Assembler assembler, int parameterCount, ref IFunctionAttribute fromConvention, ref IFunctionAttribute toConvention)
         {
-            List<string> assemblyCode = new List<string>();
-
             /*
                At the current moment in time, our register contents and parameters are as follows: RCX, RDX, R8, R9.
                The base address of old call stack (RBP) is at [rbp + 0]
@@ -198,18 +195,23 @@ namespace Reloaded.Hooks.X64
             // Re-push all toConvention stack params, then register parameters. (Right to Left)
             for (int x = 0; x < toStackParams; x++)
             {
-                assemblyCode.Add($"push qword [rbp + {baseStackOffset}]");
+                assembler.push(__qword_ptr[rbp + baseStackOffset]);
                 baseStackOffset -= 8;
             }
             
             for (int x = Math.Min(toConvention.SourceRegisters.Length, parameterCount) - 1; x >= 0; x--) 
-                assemblyCode.Add($"push {toConvention.SourceRegisters[x]}");
+                assembler.push(GetRegister64(toConvention.SourceRegisters[x]));
 
             // Pop all necessary registers to target. (Left to Right)
             for (int x = 0; x < fromConvention.SourceRegisters.Length && x < parameterCount; x++)
-                assemblyCode.Add($"pop {fromConvention.SourceRegisters[x]}");                
+                assembler.pop(GetRegister64(fromConvention.SourceRegisters[x]));
+        }
 
-            return assemblyCode.ToArray();
+        private static AssemblerRegister64 GetRegister64(object reg)
+        {
+            string name = reg.ToString().ToLower();
+            var field = typeof(AssemblerRegisters).GetField(name);
+            return (AssemblerRegister64)field.GetValue(null);
         }
     }
 }
