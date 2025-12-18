@@ -15,6 +15,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Reloaded.Hooks\Reloaded.Hooks.csproj" />
+	<PackageReference Include="goatcorp.Reloaded.Assembler" Version="1.0.14-goatcorp5">
+		<IncludeAssets>All</IncludeAssets>
+		<PrivateAssets>None</PrivateAssets>
+	</PackageReference>
   </ItemGroup>
 
   <ItemGroup>
