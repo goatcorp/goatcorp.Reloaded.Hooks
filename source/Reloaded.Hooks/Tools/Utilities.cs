@@ -23,36 +23,7 @@ namespace Reloaded.Hooks.Tools
 {
     public static class Utilities
     {
-        private static readonly ConcurrentBag<Assembler.Assembler> _assemblerPool = new();
-
-        /// <summary>
-        /// Assembler is costly to instantiate.
-        /// We pool it to limit multiple instantiations.
-        /// </summary>
-        /// <remarks>Use the returned struct with a using declaration.</remarks>
-        public static AssemblerLease RentAssembler()
-        {
-            if (_assemblerPool.TryTake(out var assembler))
-                return new(assembler);
-
-            return new(new(FasmBasePath ?? new DirectoryInfo(Directory.GetCurrentDirectory())));
-        }
-
-        public static byte[] Assemble(string[] asmCode)
-        {
-            using var asmLease = RentAssembler();
-            return asmLease.Assembler.Assemble(asmCode);
-        }
-
         private static MemoryBufferHelper _bufferHelper;
-
-        public readonly struct AssemblerLease(Assembler.Assembler assembler) : IDisposable
-        {
-            public readonly Assembler.Assembler Assembler = assembler;
-
-            public void Dispose()
-                => _assemblerPool.Add(Assembler);
-        }
 
         /// <summary>
         /// Class representing an already held process handle.
@@ -188,19 +159,19 @@ namespace Reloaded.Hooks.Tools
             }
             else
             {
-            // Hack: Work around invalid jumps.
-            // There are legitimate possibilities of edge cases whereby it may not be possible to
-            // jump from source to target, such as when there isn't sufficient memory.  
-            // We're going to try hack past this with a simple hack for now, it's not perfect but
-            // it should be good enough in the meantime.
+                // Hack: Work around invalid jumps.
+                // There are legitimate possibilities of edge cases whereby it may not be possible to
+                // jump from source to target, such as when there isn't sufficient memory.  
+                // We're going to try hack past this with a simple hack for now, it's not perfect but
+                // it should be good enough in the meantime.
 
-            // Note: This code only handles signed cases in 64-bit due to length of long.
-            // but given the address space of 64b, I don't consider this to be a limitation in my lifetime.
+                // Note: This code only handles signed cases in 64-bit due to length of long.
+                // but given the address space of 64b, I don't consider this to be a limitation in my lifetime.
 
-            // If we are exceeding the max jump range, try to
-            // find a buffer within the range of currentaddress and
-            // jump to it, then absolute jump from that one.
-            var minMax = GetRelativeJumpMinMax(currentAddress);
+                // If we are exceeding the max jump range, try to
+                // find a buffer within the range of currentaddress and
+                // jump to it, then absolute jump from that one.
+                var minMax = GetRelativeJumpMinMax(currentAddress);
                 var buffer = FindOrCreateBufferInRange(16, minMax.min, minMax.max); // No code alignment as this is edge case.
                 effectiveTarget = buffer.Add(AssembleAbsoluteJump(targetAddress, is64bit));
             }
