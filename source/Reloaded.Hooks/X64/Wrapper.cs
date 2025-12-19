@@ -99,7 +99,7 @@ namespace Reloaded.Hooks.X64
             // If you need more than that, then... I don't know what you're doing with your life.
             // Please do a pull request though and we can stick some code to predict the size.
             const int MaxFunctionSize = 384;
-            var assembler = new Iced.Intel.Assembler(bitness: 64);
+            var assembler = new Assembler(bitness: 64);
             var minMax = Utilities.GetRelativeJumpMinMax(functionAddress, Int32.MaxValue - MaxFunctionSize);
             var buffer = Utilities.FindOrCreateBufferInRange(MaxFunctionSize, minMax.min, minMax.max);
             int numberOfParameters = Utilities.GetNumberofParametersWithoutFloats<TFunction>();
@@ -168,7 +168,7 @@ namespace Reloaded.Hooks.X64
             });
         }
 
-        private static void AssembleFunctionParameters(Iced.Intel.Assembler assembler, int parameterCount, ref IFunctionAttribute fromConvention, ref IFunctionAttribute toConvention)
+        private static void AssembleFunctionParameters(Assembler assembler, int parameterCount, ref IFunctionAttribute fromConvention, ref IFunctionAttribute toConvention)
         {
             /*
                At the current moment in time, our register contents and parameters are as follows: RCX, RDX, R8, R9.

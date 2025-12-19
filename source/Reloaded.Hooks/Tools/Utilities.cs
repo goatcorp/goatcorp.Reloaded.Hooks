@@ -61,7 +61,7 @@ namespace Reloaded.Hooks.Tools
             _bufferHelper = new MemoryBufferHelper(GetCurrentProcess());
         }
 
-        internal static byte[] AssemblerToArray(Iced.Intel.Assembler assembler, ulong rip = 0)
+        internal static byte[] AssemblerToArray(Assembler assembler, ulong rip = 0)
         {
             using var stream = new MemoryStream();
             var writer = new StreamCodeWriter(stream);
@@ -89,7 +89,7 @@ namespace Reloaded.Hooks.Tools
         {
             var buffer = FindOrCreateBufferInRange(IntPtr.Size, 1, Int32.MaxValue);
             var functionPointer = buffer.Add(ref target);
-            var assembler = new Iced.Intel.Assembler(is64bit ? 64 : 32);
+            var assembler = new Assembler(is64bit ? 64 : 32);
 
             if (is64bit)
                 assembler.jmp(__qword_ptr[functionPointer]);
@@ -106,7 +106,7 @@ namespace Reloaded.Hooks.Tools
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
         public static byte[] AssemblePushReturn(nuint target, bool is64bit)
         {
-            var assembler = new Iced.Intel.Assembler(is64bit ? 64 : 32);
+            var assembler = new Assembler(is64bit ? 64 : 32);
             assembler.push((uint)target);
             assembler.ret();
             return AssemblerToArray(assembler);
@@ -119,7 +119,7 @@ namespace Reloaded.Hooks.Tools
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
         public static byte[] AssembleRelativeJump(IntPtr relativeJumpOffset, bool is64bit)
         {
-            var assembler = new Iced.Intel.Assembler(is64bit ? 64 : 32);
+            var assembler = new Assembler(is64bit ? 64 : 32);
 
             if (is64bit)
                 assembler.jmp((ulong)relativeJumpOffset.ToInt64());
@@ -150,7 +150,7 @@ namespace Reloaded.Hooks.Tools
         {
             long offset = (long)targetAddress - (long)currentAddress;
             isProxied = Math.Abs(offset) > Int32.MaxValue;
-            var assembler = new Iced.Intel.Assembler(is64bit ? 64 : 32);
+            var assembler = new Assembler(is64bit ? 64 : 32);
             ulong effectiveTarget;
 
             if (!isProxied)
