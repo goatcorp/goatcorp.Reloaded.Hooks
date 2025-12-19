@@ -207,11 +207,28 @@ namespace Reloaded.Hooks.X64
                 assembler.pop(GetRegister64(fromConvention.SourceRegisters[x]));
         }
 
-        private static AssemblerRegister64 GetRegister64(object reg)
+        private static AssemblerRegister64 GetRegister64(FunctionAttribute.Register reg)
         {
-            string name = reg.ToString().ToLower();
-            var field = typeof(AssemblerRegisters).GetField(name);
-            return (AssemblerRegister64)field.GetValue(null);
+            return reg switch
+            {
+                FunctionAttribute.Register.rax => rax,
+                FunctionAttribute.Register.rcx => rcx,
+                FunctionAttribute.Register.rdx => rdx,
+                FunctionAttribute.Register.rbx => rbx,
+                FunctionAttribute.Register.rsp => rsp,
+                FunctionAttribute.Register.rbp => rbp,
+                FunctionAttribute.Register.rsi => rsi,
+                FunctionAttribute.Register.rdi => rdi,
+                FunctionAttribute.Register.r8 => r8,
+                FunctionAttribute.Register.r9 => r9,
+                FunctionAttribute.Register.r10 => r10,
+                FunctionAttribute.Register.r11 => r11,
+                FunctionAttribute.Register.r12 => r12,
+                FunctionAttribute.Register.r13 => r13,
+                FunctionAttribute.Register.r14 => r14,
+                FunctionAttribute.Register.r15 => r15,
+                _ => throw new ArgumentOutOfRangeException(nameof(reg), reg, "Unsupported 64-bit register.")
+            };
         }
     }
 }
