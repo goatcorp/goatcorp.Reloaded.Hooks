@@ -61,7 +61,7 @@ namespace Reloaded.Hooks.Tools
             _bufferHelper = new MemoryBufferHelper(GetCurrentProcess());
         }
 
-        private static byte[] AssemblerToArray(Iced.Intel.Assembler assembler, ulong rip = 0)
+        internal static byte[] AssemblerToArray(Iced.Intel.Assembler assembler, ulong rip = 0)
         {
             using var stream = new MemoryStream();
             var writer = new StreamCodeWriter(stream);

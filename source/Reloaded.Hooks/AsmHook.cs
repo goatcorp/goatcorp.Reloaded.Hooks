@@ -9,6 +9,7 @@ using Reloaded.Hooks.Tools;
 using Reloaded.Memory.Buffers;
 using Reloaded.Memory.Sources;
 using static Reloaded.Memory.Sources.Memory;
+using Iced.Intel;
 
 namespace Reloaded.Hooks
 {
@@ -74,6 +75,32 @@ namespace Reloaded.Hooks
         {
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Creates a cheat engine style hook, replacing instruction(s) with a JMP to a user provided set of ASM instructions (and optionally the original ones).
+        /// </summary>
+        /// <param name="assembler">
+        ///     The Iced.Intel.Assembler containing the assembly instructions to execute.
+        /// </param>
+        /// <param name="functionAddress">The address of the function or mid-function to hook.</param>
+        /// <param name="behaviour">Defines what should be done with the original code that was replaced with the JMP instruction.</param>
+        /// <param name="hookLength">Optional explicit length of hook. Use only in rare cases where auto-length check overflows a jmp/call opcode.</param>
+        public AsmHook(Assembler assembler, nuint functionAddress, AsmHookBehaviour behaviour = AsmHookBehaviour.ExecuteFirst, int hookLength = -1)
+            : this(Utilities.AssemblerToArray(assembler), functionAddress,
+                  new AsmHookOptions { Behaviour = behaviour, hookLength = hookLength })
+        { }
+
+        /// <summary>
+        /// Creates a cheat engine style hook, replacing instruction(s) with a JMP to a user provided set of ASM instructions (and optionally the original ones).
+        /// </summary>
+        /// <param name="assembler">
+        ///     The Iced.Intel.Assembler containing the assembly instructions to execute.
+        /// </param>
+        /// <param name="functionAddress">The address of the function or mid-function to hook.</param>
+        /// <param name="options">The options used for creating the assembly hook.</param>
+        public AsmHook(Assembler assembler, nuint functionAddress, AsmHookOptions options = default)
+            : this(Utilities.AssemblerToArray(assembler), functionAddress, options)
+        { }
 
         /// <summary>
         /// Creates a cheat engine style hook, replacing instruction(s) with a JMP to a user provided set of ASM instructions (and optionally the original ones).
