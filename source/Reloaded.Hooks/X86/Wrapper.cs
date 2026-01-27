@@ -97,69 +97,7 @@ namespace Reloaded.Hooks.X86
 #endif
         TFunction>(nuint functionAddress, IFunctionAttribute fromConvention, IFunctionAttribute toConvention)
         {
-            // 256 Bytes should allow for around 60-70 parameters in worst case scenario.
-            // If you need more than that, then... I don't know what you're doing with your life.
-            // Please do a pull request though and we can stick some code to predict the size.
-            const int MaxFunctionSize = 256;
-            using var asmLease = Utilities.RentAssembler();
-            var minMax = Utilities.GetRelativeJumpMinMax(functionAddress, Int32.MaxValue - MaxFunctionSize);
-            var buffer = Utilities.FindOrCreateBufferInRange(MaxFunctionSize, minMax.min, minMax.max);
-            var numberOfParameters = Utilities.GetNumberofParameters<TFunction>();
-
-            return buffer.ExecuteWithLock(() =>
-            {
-                // Align the code.
-                buffer.SetAlignment(16);
-                var codeAddress = buffer.Properties.WritePointer;
-
-                // Write pointer.
-                // toFunction (target) is CDECL
-                List<string> assemblyCode = new List<string>
-                {
-                    "use32",
-                    $"org {codeAddress}" // Tells FASM where code should be located.
-                };
-
-                // Calculate some stack stuff.
-                int fromStackParamBytesTotal = (fromConvention.Cleanup == StackCleanup.Caller) ? (numberOfParameters - fromConvention.SourceRegisters.Length) * 4 : 0;
-                int toStackParamBytesTotal = (toConvention.Cleanup == StackCleanup.Callee) ? (numberOfParameters - toConvention.SourceRegisters.Length) * 4 : 0;
-                int stackCleanupBytesTotal = fromStackParamBytesTotal + fromConvention.ReservedStackSpace;
-
-                // Callee Saved Registers
-                assemblyCode.Add("push ebp");       // Backup old call frame
-                assemblyCode.Add("mov ebp, esp");   // Setup new call frame
-                foreach (var register in toConvention.CalleeSavedRegisters)
-                    assemblyCode.Add($"push {register}");
-
-                // Reserve Extra Stack Space
-                if (fromConvention.ReservedStackSpace > 0)
-                    assemblyCode.Add($"sub esp, {fromConvention.ReservedStackSpace}");
-
-                // Setup Function Parameters
-                if (numberOfParameters > 0)
-                    assemblyCode.AddRange(AssembleFunctionParameters(numberOfParameters, fromConvention.SourceRegisters, toConvention.SourceRegisters));
-
-                // Call target function
-                assemblyCode.Add($"call {functionAddress}");
-
-                // Stack cleanup if necessary 
-                if (stackCleanupBytesTotal > 0)
-                    assemblyCode.Add($"add esp, {stackCleanupBytesTotal}");
-
-                // Setup return register
-                if (fromConvention.ReturnRegister != toConvention.ReturnRegister)
-                    assemblyCode.Add($"mov {toConvention.ReturnRegister}, {fromConvention.ReturnRegister}");
-
-                // Callee Restore Registers
-                foreach (var register in toConvention.CalleeSavedRegisters.AsEnumerable().Reverse())
-                    assemblyCode.Add($"pop {register}");
-
-                assemblyCode.Add("pop ebp");
-                assemblyCode.Add($"ret {toStackParamBytesTotal}"); // FASM optimizes `ret 0` as `ret`
-
-                // Write function to buffer and return pointer.
-                return buffer.Add(asmLease.Assembler.Assemble(assemblyCode.ToArray()), 1);
-            });
+            throw new NotImplementedException();
         }
 
         private static string[] AssembleFunctionParameters(int parameterCount, Register[] fromRegisters, Register[] toRegisters)

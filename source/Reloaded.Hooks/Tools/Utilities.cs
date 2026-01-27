@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Iced.Intel;
+using static Iced.Intel.AssemblerRegisters;
 using Microsoft.Win32.SafeHandles;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Helpers;
@@ -22,36 +23,7 @@ namespace Reloaded.Hooks.Tools
 {
     public static class Utilities
     {
-        private static readonly ConcurrentBag<Assembler.Assembler> _assemblerPool = new();
-
-        /// <summary>
-        /// Assembler is costly to instantiate.
-        /// We pool it to limit multiple instantiations.
-        /// </summary>
-        /// <remarks>Use the returned struct with a using declaration.</remarks>
-        public static AssemblerLease RentAssembler()
-        {
-            if (_assemblerPool.TryTake(out var assembler))
-                return new(assembler);
-
-            return new(new(FasmBasePath ?? new DirectoryInfo(Directory.GetCurrentDirectory())));
-        }
-
-        public static byte[] Assemble(string[] asmCode)
-        {
-            using var asmLease = RentAssembler();
-            return asmLease.Assembler.Assemble(asmCode);
-        }
-
         private static MemoryBufferHelper _bufferHelper;
-
-        public readonly struct AssemblerLease(Assembler.Assembler assembler) : IDisposable
-        {
-            public readonly Assembler.Assembler Assembler = assembler;
-
-            public void Dispose()
-                => _assemblerPool.Add(Assembler);
-        }
 
         /// <summary>
         /// Class representing an already held process handle.
@@ -89,9 +61,13 @@ namespace Reloaded.Hooks.Tools
             _bufferHelper = new MemoryBufferHelper(GetCurrentProcess());
         }
 
-        private static string Architecture(bool is64bit) => is64bit ? "use64" : "use32";
-
-        private static string SetAddress(nuint address) => $"org {address}";
+        internal static byte[] AssemblerToArray(Assembler assembler, ulong rip = 0)
+        {
+            using var stream = new MemoryStream();
+            var writer = new StreamCodeWriter(stream);
+            assembler.Assemble(writer, rip);
+            return stream.ToArray();
+        }
 
         /// <summary>
         /// Writes a pointer to a given target address in unmanaged, non-reclaimable memory.
@@ -109,33 +85,49 @@ namespace Reloaded.Hooks.Tools
         /// </summary>
         /// <param name="target">The target memory location to jump to.</param>
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
-        public static byte[] AssembleAbsoluteJump(nuint target, bool is64bit) => Assemble(new[]
+        public static byte[] AssembleAbsoluteJump(nuint target, bool is64bit)
         {
-            Architecture(is64bit),
-            GetAbsoluteJumpMnemonics(target, is64bit)
-        });
+            var buffer = FindOrCreateBufferInRange(IntPtr.Size, 1, Int32.MaxValue);
+            var functionPointer = buffer.Add(ref target);
+            var assembler = new Assembler(is64bit ? 64 : 32);
+
+            if (is64bit)
+                assembler.jmp(__qword_ptr[functionPointer]);
+            else
+                assembler.jmp(__dword_ptr[(uint)functionPointer]);
+
+            return AssemblerToArray(assembler);
+        }
 
         /// <summary>
         /// Assembles a push + return combination to a given target address.
         /// </summary>
         /// <param name="target">The target memory location to jump to.</param>
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
-        public static byte[] AssemblePushReturn(nuint target, bool is64bit) => Assemble(new[]
+        public static byte[] AssemblePushReturn(nuint target, bool is64bit)
         {
-            Architecture(is64bit),
-            GetPushReturnMnemonics(target, is64bit)
-        });
+            var assembler = new Assembler(is64bit ? 64 : 32);
+            assembler.push((uint)target);
+            assembler.ret();
+            return AssemblerToArray(assembler);
+        }
 
         /// <summary>
         /// Assembles a relative (to EIP/RIP) jump by a user specified offset.
         /// </summary>
         /// <param name="relativeJumpOffset">Offset relative to EIP/RIP to jump to.</param>
         /// <param name="is64bit">True to generate x64 code, else false (x86 code).</param>
-        public static byte[] AssembleRelativeJump(IntPtr relativeJumpOffset, bool is64bit) => Assemble(new[]
+        public static byte[] AssembleRelativeJump(IntPtr relativeJumpOffset, bool is64bit)
         {
-            Architecture(is64bit),
-            GetRelativeJumpMnemonics(relativeJumpOffset, is64bit)
-        });
+            var assembler = new Assembler(is64bit ? 64 : 32);
+
+            if (is64bit)
+                assembler.jmp((ulong)relativeJumpOffset.ToInt64());
+            else
+                assembler.jmp((uint)relativeJumpOffset.ToInt32());
+
+            return AssemblerToArray(assembler);
+        }
 
         /// <summary>
         /// Assembles a relative (to EIP/RIP) jump by a user specified offset.
@@ -158,37 +150,34 @@ namespace Reloaded.Hooks.Tools
         {
             long offset = (long)targetAddress - (long)currentAddress;
             isProxied = Math.Abs(offset) > Int32.MaxValue;
+            var assembler = new Assembler(is64bit ? 64 : 32);
+            ulong effectiveTarget;
+
             if (!isProxied)
             {
-                return Assemble(new[]
-                {
-                    Architecture(is64bit),
-                    SetAddress(currentAddress),
-                    is64bit ? $"jmp qword {targetAddress}" : $"jmp dword {targetAddress}"
-                });
+                effectiveTarget = targetAddress;
+            }
+            else
+            {
+                // Hack: Work around invalid jumps.
+                // There are legitimate possibilities of edge cases whereby it may not be possible to
+                // jump from source to target, such as when there isn't sufficient memory.  
+                // We're going to try hack past this with a simple hack for now, it's not perfect but
+                // it should be good enough in the meantime.
+
+                // Note: This code only handles signed cases in 64-bit due to length of long.
+                // but given the address space of 64b, I don't consider this to be a limitation in my lifetime.
+
+                // If we are exceeding the max jump range, try to
+                // find a buffer within the range of currentaddress and
+                // jump to it, then absolute jump from that one.
+                var minMax = GetRelativeJumpMinMax(currentAddress);
+                var buffer = FindOrCreateBufferInRange(16, minMax.min, minMax.max); // No code alignment as this is edge case.
+                effectiveTarget = buffer.Add(AssembleAbsoluteJump(targetAddress, is64bit));
             }
 
-            // Hack: Work around invalid jumps.
-            // There are legitimate possibilities of edge cases whereby it may not be possible to
-            // jump from source to target, such as when there isn't sufficient memory.  
-            // We're going to try hack past this with a simple hack for now, it's not perfect but
-            // it should be good enough in the meantime.
-
-            // Note: This code only handles signed cases in 64-bit due to length of long.
-            // but given the address space of 64b, I don't consider this to be a limitation in my lifetime.
-
-            // If we are exceeding the max jump range, try to
-            // find a buffer within the range of currentaddress and
-            // jump to it, then absolute jump from that one.
-            var minMax = GetRelativeJumpMinMax(currentAddress);
-            var buffer  = FindOrCreateBufferInRange(16, minMax.min, minMax.max); // No code alignment as this is edge case.
-            var absoluteJumpAddress = buffer.Add(AssembleAbsoluteJump(targetAddress, is64bit));
-            return Assemble(new[]
-            {
-                Architecture(is64bit),
-                SetAddress(currentAddress),
-                is64bit ? $"jmp qword {absoluteJumpAddress}" : $"jmp dword {absoluteJumpAddress}"
-            });
+            assembler.jmp(effectiveTarget);
+            return AssemblerToArray(assembler, currentAddress);
         }
 
         /// <summary>

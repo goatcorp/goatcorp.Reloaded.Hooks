@@ -30,10 +30,6 @@
 
   <ItemGroup>
     <PackageReference Include="Iced" Version="1.17.0" />
-    <PackageReference Include="goatcorp.Reloaded.Assembler" Version="1.0.14-goatcorp5">
-      <IncludeAssets>All</IncludeAssets>
-      <PrivateAssets>None</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="goatcorp.Reloaded.Memory.Buffers" Version="2.0.0-goatcorp8" />
   </ItemGroup>
 

@@ -32,26 +32,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\CalculatorAsmHookTest.cs" Link="CalculatorAsmHookTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\CalculatorDoubleHookEnableDisableTest.cs" Link="CalculatorDoubleHookEnableDisableTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\CalculatorDoubleHookTest.cs" Link="CalculatorDoubleHookTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\CalculatorFunctionPointerTest.cs" Link="CalculatorFunctionPointerTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\CalculatorHookTest.cs" Link="CalculatorHookTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\CalculatorTest.cs" Link="CalculatorTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\CSharpFromAssembly.cs" Link="CSharpFromAssembly.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\FastcallCalculatorDoubleHookTest.cs" Link="FastcallCalculatorDoubleHookTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\FastcallCalculatorFunctionPointerTest.cs" Link="FastcallCalculatorFunctionPointerTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\FastcallCalculatorHookTest.cs" Link="FastcallCalculatorHookTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\FastcallCalculatorTest.cs" Link="FastcallCalculatorTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\FunctionPatcherTest.cs" Link="FunctionPatcherTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\HookedObjectVtableTest.cs" Link="HookedObjectVtableTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\LongJumpTest.cs" Link="LongJumpTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\ReloadedHooksTest.cs" Link="ReloadedHooksTest.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\SuperStackedHooks.cs" Link="SuperStackedHooks.cs" />
-    <Compile Include="..\Reloaded.Hooks.Tests.X64\VTableTest.cs" Link="VTableTest.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Reloaded.Hooks.Tests.Shared\Reloaded.Hooks.Tests.Shared.csproj" />
     <ProjectReference Include="..\Reloaded.Hooks\Reloaded.Hooks.csproj" />
   </ItemGroup>
