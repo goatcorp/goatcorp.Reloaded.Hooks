@@ -15,7 +15,7 @@
     <RepositoryType>git</RepositoryType>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Advanced native function hooks for x86, x64. Welcome to the next level!</Description>
-    <Version>4.2.0-goatcorp8</Version>
+    <Version>4.2.0-goatcorp9</Version>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageIcon>Icon.png</PackageIcon>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="Iced" Version="1.17.0" />
-    <PackageReference Include="goatcorp.Reloaded.Memory.Buffers" Version="2.0.0-goatcorp8" />
+    <PackageReference Include="goatcorp.Reloaded.Memory.Buffers" Version="2.0.0-goatcorp10" />
   </ItemGroup>
 
   <ItemGroup>
