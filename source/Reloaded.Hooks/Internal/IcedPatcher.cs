@@ -14,8 +14,6 @@ namespace Reloaded.Hooks.Internal
     /// </summary>
     public class IcedPatcher
     {
-        private static MemoryBufferHelper _helper = new MemoryBufferHelper(Utilities.GetCurrentProcess());
-
         // In
         private int _bitness;
         private byte[] _bytes;
@@ -70,7 +68,9 @@ namespace Reloaded.Hooks.Internal
                 return _newPrologueAddress;
 
             int alignment       = 16;
-            var estimateLength  = (_bytes.Length * 2) + alignment; // Super generous! Exact length not known till relocated, just ensuring the size is enough under any circumstance.
+            // Super generous! Exact length not known till relocated, just ensuring the size is enough under any
+            // circumstance. Includes the tail jump appended below.
+            var estimateLength  = (_bytes.Length * 2) + Constants.MaxAbsJmpSize + alignment;
             var minMax          = Utilities.GetRelativeJumpMinMax(jumpTarget ?? 0, Int32.MaxValue - estimateLength);
             var buffer          = Utilities.FindOrCreateBufferInRange(estimateLength, minMax.min, minMax.max, alignment);
             return buffer.ExecuteWithLock(() =>
@@ -79,9 +79,12 @@ namespace Reloaded.Hooks.Internal
                 buffer.SetAlignment(alignment);
                 var newBaseAddress = buffer.Properties.WritePointer;
                 var data           = EncodeForNewAddress(newBaseAddress);
-                _newPrologueAddress = buffer.Add(data, 1);
+                _newPrologueAddress = buffer.AddAtOrThrow(newBaseAddress, data, 1);
                 if (jumpTarget != null)
-                    buffer.Add(Utilities.AssembleRelativeJump(buffer.Properties.WritePointer, jumpTarget.Value, _bitness == 64), 1);
+                {
+                    var jumpAddress = buffer.Properties.WritePointer;
+                    buffer.AddAtOrThrow(jumpAddress, Utilities.AssembleRelativeJump(jumpAddress, jumpTarget.Value, _bitness == 64), 1);
+                }
 
                 return _newPrologueAddress;
             });

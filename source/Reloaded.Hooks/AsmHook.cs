@@ -177,7 +177,7 @@ namespace Reloaded.Hooks
                 byte[] jmpToHook     = Utilities.AssembleRelativeJump(currAddress, hookStubAddr, _is64Bit);
 
                 // Make Entry Stub
-                nuint entryStubAddr = buffer.Add(jmpToHook, codeAlignment);
+                nuint entryStubAddr = buffer.AddAtOrThrow(currAddress, jmpToHook, codeAlignment);
 
                 // Make Disable/Enable
                 _disableHookPatch = new Patch(entryStubAddr, jmpToOriginal);
@@ -194,16 +194,19 @@ namespace Reloaded.Hooks
         private nuint MakeHookStub(MemoryBuffer buffer, IcedPatcher patcher, byte[] asmCode, byte[] originalCode, nuint jumpBackAddress, AsmHookBehaviour behaviour)
         {
             var bytes        = new List<byte>(asmCode.Length + originalCode.Length);
-           
+
+            // Everything below is encoded for the address this stub will occupy
+            var stubAddress  = buffer.Properties.WritePointer;
+
             switch (behaviour)
             {
                 case AsmHookBehaviour.ExecuteFirst:
                     bytes.AddRange(asmCode);
-                    bytes.AddRange(patcher.EncodeForNewAddress(buffer.Properties.WritePointer + (nuint)bytes.Count));
+                    bytes.AddRange(patcher.EncodeForNewAddress(stubAddress + (nuint)bytes.Count));
                     break;
 
                 case AsmHookBehaviour.ExecuteAfter:
-                    bytes.AddRange(patcher.EncodeForNewAddress(buffer.Properties.WritePointer + (nuint)bytes.Count));
+                    bytes.AddRange(patcher.EncodeForNewAddress(stubAddress + (nuint)bytes.Count));
                     bytes.AddRange(asmCode);
                     break;
 
@@ -215,19 +218,22 @@ namespace Reloaded.Hooks
                     throw new ArgumentOutOfRangeException(nameof(behaviour), behaviour, null);
             }
 
-            var jmpBackBytes = Utilities.AssembleRelativeJump(buffer.Properties.WritePointer + (nuint)bytes.Count, jumpBackAddress, _is64Bit);
+            var jmpBackBytes = Utilities.AssembleRelativeJump(stubAddress + (nuint)bytes.Count, jumpBackAddress, _is64Bit);
             bytes.AddRange(jmpBackBytes);
-            return buffer.Add(bytes.ToArray(), 1); // Buffer is pre-aligned
+            return buffer.AddAtOrThrow(stubAddress, bytes.ToArray(), 1); // Buffer is pre-aligned
         }
 
         private nuint MakeOriginalStub(MemoryBuffer buffer, IcedPatcher patcher, byte[] originalCode, nuint jumpBackAddress)
         {
             var bytes         = new List<byte>(originalCode.Length);
-            bytes.AddRange(patcher.EncodeForNewAddress(buffer.Properties.WritePointer));
 
-            var jmpBackBytes = Utilities.AssembleRelativeJump(buffer.Properties.WritePointer + (nuint)bytes.Count, jumpBackAddress, _is64Bit);
+            // Everything below is encoded for the address this stub will occupy
+            var stubAddress   = buffer.Properties.WritePointer;
+            bytes.AddRange(patcher.EncodeForNewAddress(stubAddress));
+
+            var jmpBackBytes = Utilities.AssembleRelativeJump(stubAddress + (nuint)bytes.Count, jumpBackAddress, _is64Bit);
             bytes.AddRange(jmpBackBytes);
-            return buffer.Add(bytes.ToArray(), 1); // Buffer is pre-aligned
+            return buffer.AddAtOrThrow(stubAddress, bytes.ToArray(), 1); // Buffer is pre-aligned
         }
 
         /* User Functionality */

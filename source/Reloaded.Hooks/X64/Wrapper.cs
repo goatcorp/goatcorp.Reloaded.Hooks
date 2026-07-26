@@ -1,12 +1,12 @@
 ﻿using Iced.Intel;
 using static Iced.Intel.AssemblerRegisters;
-﻿using System;
+using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions.Helpers;
 using Reloaded.Hooks.Definitions.X64;
+using Reloaded.Hooks.Internal;
 using Reloaded.Hooks.Tools;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -164,7 +164,7 @@ namespace Reloaded.Hooks.X64
                 using var stream = new MemoryStream();
                 var result = assembler.Assemble(new StreamCodeWriter(stream), codeAddress);
 
-                return buffer.Add(stream.ToArray(), 1);
+                return buffer.AddAtOrThrow(codeAddress, stream.ToArray(), 1);
             });
         }
 

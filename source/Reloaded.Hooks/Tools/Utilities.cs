@@ -1,14 +1,10 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-#if NET5_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
-#endif
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using Iced.Intel;
 using static Iced.Intel.AssemblerRegisters;
 using Microsoft.Win32.SafeHandles;
@@ -77,7 +73,7 @@ namespace Reloaded.Hooks.Tools
         public static unsafe nuint WritePointer(nuint target)
         {
             var buffer = FindOrCreateBufferInRange(sizeof(nuint));
-            return buffer.Add(ref target);
+            return buffer.AddOrThrow(ref target);
         }
 
         /// <summary>
@@ -88,7 +84,7 @@ namespace Reloaded.Hooks.Tools
         public static byte[] AssembleAbsoluteJump(nuint target, bool is64bit)
         {
             var buffer = FindOrCreateBufferInRange(IntPtr.Size, 1, Int32.MaxValue);
-            var functionPointer = buffer.Add(ref target);
+            var functionPointer = buffer.AddOrThrow(ref target);
             var assembler = new Assembler(is64bit ? 64 : 32);
 
             if (is64bit)
@@ -173,7 +169,7 @@ namespace Reloaded.Hooks.Tools
                 // jump to it, then absolute jump from that one.
                 var minMax = GetRelativeJumpMinMax(currentAddress);
                 var buffer = FindOrCreateBufferInRange(16, minMax.min, minMax.max); // No code alignment as this is edge case.
-                effectiveTarget = buffer.Add(AssembleAbsoluteJump(targetAddress, is64bit));
+                effectiveTarget = buffer.AddOrThrow(AssembleAbsoluteJump(targetAddress, is64bit));
             }
 
             assembler.jmp(effectiveTarget);
@@ -188,7 +184,7 @@ namespace Reloaded.Hooks.Tools
         public static string GetAbsoluteJumpMnemonics(nuint target, bool is64bit)
         {
             var buffer = FindOrCreateBufferInRange(IntPtr.Size, 1, Int32.MaxValue);
-            nuint functionPointer = buffer.Add(ref target);
+            nuint functionPointer = buffer.AddOrThrow(ref target);
 
             if (is64bit) return "jmp qword [qword " + functionPointer + "]";
             else         return "jmp dword [" + functionPointer + "]";
@@ -202,7 +198,7 @@ namespace Reloaded.Hooks.Tools
         public static string GetAbsoluteCallMnemonics(nuint target, bool is64bit)
         {
             var buffer = FindOrCreateBufferInRange(IntPtr.Size, 1, Int32.MaxValue);
-            nuint functionPointer = buffer.Add(ref target);
+            nuint functionPointer = buffer.AddOrThrow(ref target);
 
             if (is64bit) return "call qword [qword " + functionPointer + "]";
             else         return "call dword [" + functionPointer + "]";
@@ -283,7 +279,7 @@ namespace Reloaded.Hooks.Tools
             var minMax = GetRelativeJumpMinMax(targetAddress, maxDisplacement);
             var buffer = FindOrCreateBufferInRange(newBytesArray.Length, minMax.min, minMax.max);
 
-            return buffer.Add(newBytesArray);
+            return buffer.AddOrThrow(newBytesArray);
         }
 
         /// <summary>
@@ -306,12 +302,12 @@ namespace Reloaded.Hooks.Tools
                 buffer.SetAlignment(alignment);
                 var codeAddress = buffer.Properties.WritePointer;
                 var bytes = TryAssembleRelativeJumpArray(codeAddress, targetPtr, is64Bit, out _);
-                var result = buffer.Add(bytes, 1);
+                var result = buffer.AddAtOrThrow(codeAddress, bytes, 1);
 
                 var bytesUsed  = buffer.Properties.WritePointer - codeAddress;
                 var extraBytes = minBytesUsed - (int)bytesUsed;
                 if (extraBytes > 0)
-                    buffer.Add((int)extraBytes, 1);
+                    buffer.AddOrThrow((int)extraBytes, 1);
 
                 return result;
             });

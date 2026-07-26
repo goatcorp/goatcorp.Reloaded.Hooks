@@ -339,7 +339,7 @@ namespace Reloaded.Hooks.Internal
                 // We must create a new Push + Return to an absolute jump.
                 byte[] absoluteJump = Utilities.AssembleAbsoluteJump(newJmpTarget, _is64Bit);
                 var buffer = Utilities.FindOrCreateBufferInRange(absoluteJump.Length);
-                var absoluteJmpPointer = buffer.Add(absoluteJump);
+                var absoluteJmpPointer = buffer.AddOrThrow(absoluteJump);
 
                 byte[] newPushReturn = Utilities.AssemblePushReturn(absoluteJmpPointer, _is64Bit);
                 patches.Add(new Patch((nuint)instruction.IP, newPushReturn));
