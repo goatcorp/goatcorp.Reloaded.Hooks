@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Helpers;
 using Reloaded.Hooks.Definitions.Internal;
@@ -41,8 +42,11 @@ namespace Reloaded.Hooks
         private Patch           _hookPatch;
         private List<Patch>     _otherHookPatches;
 
-        private Patch           _disableHookPatch;
-        private Patch           _enableHookPatch;
+        /* Address of reverse wrapper jump target & values stored there. */
+        private nuint           _wrapperTargetAddress;
+        private nuint           _enabledTarget;
+        private nuint           _disabledTarget;
+
         private bool            _is64Bit;
 
         /// <summary>
@@ -79,7 +83,7 @@ namespace Reloaded.Hooks
         /// <param name="functionAddress">The address of the function to hook.</param>
         /// <param name="minHookLength">Optional explicit length of hook. Use only in rare cases where auto-length check overflows a jmp/call opcode.</param>
         /// <param name="options">Options which control the hook generation procedure.</param>
-        private void CreateHook(nuint functionAddress, int minHookLength = -1, FunctionHookOptions options = null)
+        private unsafe void CreateHook(nuint functionAddress, int minHookLength = -1, FunctionHookOptions options = null)
         {
             // Set options if not passed in.
             if (options == null)
@@ -132,17 +136,16 @@ namespace Reloaded.Hooks
 
             _otherHookPatches = functionPatch.Patches;
             _hookPatch = new Patch(functionAddress, jumpOpcodes.ToArray());
+
+            /* Enabling/disabling retargets the jump in the reverse wrapper. */
+            _wrapperTargetAddress = ReverseWrapper.WrapperPointer.ToUnsigned() + Constants.JumpStubTargetOffset;
+            _enabledTarget = *(nuint*)_wrapperTargetAddress;
+            _disabledTarget = OriginalFunctionAddress.ToUnsigned();
         }
 
         /// <inheritdoc />
         public IHook<TFunction> Activate()
         {
-            /* Create enable/disable patch. */
-            var disableOpCodes = Utilities.AssembleAbsoluteJump(OriginalFunctionAddress.ToUnsigned(), _is64Bit);
-            CurrentProcess.SafeReadRaw(ReverseWrapper.WrapperPointer.ToUnsigned(), out var originalOpcodes, disableOpCodes.Length);
-            _disableHookPatch = new Patch(ReverseWrapper.WrapperPointer.ToUnsigned(), disableOpCodes);
-            _enableHookPatch = new Patch(ReverseWrapper.WrapperPointer.ToUnsigned(), originalOpcodes);
-
             /* Activate the hook. */
             _hookPatch.Apply();
 
@@ -160,21 +163,21 @@ namespace Reloaded.Hooks
         IHook IHook.Activate() => Activate();
 
         /// <inheritdoc />
-        public void Disable()
+        public unsafe void Disable()
         {
             if (IsHookActivated)
             {
-                _disableHookPatch.ApplyUnsafe();
+                Volatile.Write(ref *(nuint*)_wrapperTargetAddress, _disabledTarget);
                 IsHookEnabled = false;
             }
         }
 
         /// <inheritdoc />
-        public void Enable()
+        public unsafe void Enable()
         {
             if (IsHookActivated)
             {
-                _enableHookPatch.ApplyUnsafe();
+                Volatile.Write(ref *(nuint*)_wrapperTargetAddress, _enabledTarget);
                 IsHookEnabled = true;
             }
         }

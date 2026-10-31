@@ -71,9 +71,10 @@ namespace Reloaded.Hooks.X64
 
             // Microsoft X64 is hot path, as our TFunction will already be Microsoft X64, we marshal if it's anything else.
             if (!reloadedFunctionAttribute.Equals(FunctionAttribute.Microsoft))
-                reverseFunctionWrapper.WrapperPointer = Wrapper.Create<TFunction>(functionPtr, FunctionAttribute.Microsoft, reloadedFunctionAttribute).ToSigned();
-            else
-                reverseFunctionWrapper.WrapperPointer = Utilities.CreateJump(functionPtr, true, Constants.MaxAbsJmpSize).ToSigned();
+                functionPtr = Wrapper.Create<TFunction>(functionPtr, FunctionAttribute.Microsoft, reloadedFunctionAttribute);
+
+            // Hooks are enabled and disabled by retargeting this jump.
+            reverseFunctionWrapper.WrapperPointer = Utilities.CreateJump(functionPtr, true).ToSigned();
         }
     }
 }

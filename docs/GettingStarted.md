@@ -305,6 +305,6 @@ For a more advanced example, consider looking at [CSharpFromAssembly.cs](https:/
 ## Misc Performance Notes
 
 - Reloaded has checks and 'hot paths' implemented to prevent creating unnecessary wrappers.
-  - For example, if you call `CreateReverseWrapper<T>` for a function marked `Stdcall` with `FunctionAttribute` and the target function is already Stdcall, no wrapper will be generated and the input pointer will be returned.
+  - For example, if you call `CreateReverseWrapper<T>` for a function marked `Stdcall` with `FunctionAttribute` and the target function is already Stdcall, no wrapper will be generated; the returned pointer is a small stub that jumps straight to the input pointer.
 
 - You can reduce the overhead of transitions between native code and .NET by [using Function Pointers](./FunctionPointers.md) (C#9).

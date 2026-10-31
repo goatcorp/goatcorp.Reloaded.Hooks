@@ -73,21 +73,18 @@ namespace Reloaded.Hooks.X86
             var managedFuncAttribute = Misc.TryGetAttributeOrDefault<TFunction, ManagedFunctionAttribute>();
             if (managedFuncAttribute != null)
             {
-                if (managedFuncAttribute.Equals(attribute))
-                {
-                    reverseFunctionWrapper.WrapperPointer = Utilities.CreateJump(functionPtr, false, Constants.MaxAbsJmpSize).ToSigned();
-                    return;
-                }
-                
-                reverseFunctionWrapper.WrapperPointer = Wrapper.Create<TFunction>(functionPtr, managedFuncAttribute, attribute).ToSigned();
-                return;
+                if (!managedFuncAttribute.Equals(attribute))
+                    functionPtr = Wrapper.Create<TFunction>(functionPtr, managedFuncAttribute, attribute);
             }
-            
-            var funcPtrAttribute = Misc.TryGetAttributeOrDefault<TFunction, UnmanagedFunctionPointerAttribute>();
-            if (!attribute.IsEquivalent(funcPtrAttribute))
-                reverseFunctionWrapper.WrapperPointer = Wrapper.Create<TFunction>(functionPtr, attribute.GetEquivalent(funcPtrAttribute), attribute).ToSigned();
             else
-                reverseFunctionWrapper.WrapperPointer = Utilities.CreateJump(functionPtr, false, Constants.MaxAbsJmpSize).ToSigned();
+            {
+                var funcPtrAttribute = Misc.TryGetAttributeOrDefault<TFunction, UnmanagedFunctionPointerAttribute>();
+                if (!attribute.IsEquivalent(funcPtrAttribute))
+                    functionPtr = Wrapper.Create<TFunction>(functionPtr, attribute.GetEquivalent(funcPtrAttribute), attribute);
+            }
+
+            // Hooks are enabled and disabled by retargeting this jump.
+            reverseFunctionWrapper.WrapperPointer = Utilities.CreateJump(functionPtr, false).ToSigned();
         }
     }
 }

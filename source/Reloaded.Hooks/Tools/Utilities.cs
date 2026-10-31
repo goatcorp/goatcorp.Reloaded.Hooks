@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -277,7 +278,9 @@ namespace Reloaded.Hooks.Tools
         }
 
         /// <summary>
-        /// Creates instructions to jump to a specified address and then writes them to the buffer.
+        /// Creates a stub which jumps to a specified address, read from the stub itself.
+        /// The stub can be placed anywhere, and is retargeted by writing a new address at
+        /// <see cref="Constants.JumpStubTargetOffset"/>, which can be done atomically.
         /// </summary>
         /// <param name="targetPtr">The address to jump to.</param>
         /// <param name="is64Bit">Whether the jump is 64-bit or not.</param>
@@ -286,23 +289,32 @@ namespace Reloaded.Hooks.Tools
         public static nuint CreateJump(nuint targetPtr, bool is64Bit, int minBytesUsed = 0)
         {
             const int alignment = 16;
-            int maxFunctionSize = alignment + Constants.MaxAbsJmpSize + minBytesUsed;
-            var minMax = Utilities.GetRelativeJumpMinMax(targetPtr, Int32.MaxValue - maxFunctionSize);
+            var stubSize = Math.Max(Constants.JumpStubSize, minBytesUsed);
 
-            return ExecuteWithBuffer(maxFunctionSize, minMax.min, minMax.max, buffer =>
+            // New buffers are placed around the middle of the requested range, so the range shouldn't extend past the end of x64 user mode memory.
+            var maxAddress = is64Bit ? unchecked((nuint)0x7FFF_FFFF_FFFFUL) : UInt32.MaxValue;
+
+            return ExecuteWithBuffer(alignment + stubSize, 1, maxAddress, buffer =>
             {
-                // Align the code.
                 buffer.SetAlignment(alignment);
-                var codeAddress = buffer.Properties.WritePointer;
-                var bytes = TryAssembleRelativeJumpArray(codeAddress, targetPtr, is64Bit, out _);
-                var result = buffer.AddAtOrThrow(codeAddress, bytes, 1);
+                var stubAddress = buffer.Properties.WritePointer;
+                var stub = new byte[stubSize];
 
-                var bytesUsed  = buffer.Properties.WritePointer - codeAddress;
-                var extraBytes = minBytesUsed - (int)bytesUsed;
-                if (extraBytes > 0)
-                    buffer.AddOrThrow((int)extraBytes, 1);
+                // jmp [rip+2] on x64, jmp [stubAddress+8] on x86, padded so the target address is aligned.
+                stub[0] = 0xFF;
+                stub[1] = 0x25;
+                var displacement = is64Bit ? 2u : (uint)(stubAddress + Constants.JumpStubTargetOffset);
+                BinaryPrimitives.WriteUInt32LittleEndian(stub.AsSpan(2), displacement);
+                stub[6] = 0xCC;
+                stub[7] = 0xCC;
 
-                return result;
+                var target = stub.AsSpan(Constants.JumpStubTargetOffset);
+                if (is64Bit)
+                    BinaryPrimitives.WriteUInt64LittleEndian(target, targetPtr);
+                else
+                    BinaryPrimitives.WriteUInt32LittleEndian(target, (uint)targetPtr);
+
+                return buffer.AddAtOrThrow(stubAddress, stub, 1);
             });
         }
         
